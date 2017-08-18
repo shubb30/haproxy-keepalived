@@ -1,0 +1,41 @@
+version: '2'
+volumes:
+  haproxy-etc-sysctd-d:
+    external: true
+    driver: rancher-nfs
+  haproxy-etc-haproxy:
+    external: true
+    driver: rancher-nfs
+services:
+  Keepalived:
+    cap_add:
+    - NET_ADMIN
+    - NET_BROADCAST
+    image: oberthur/docker-keepalived
+    environment:
+      AUTHPASS: <<VRRP auth passphrase>>
+      INTERFACE: eth0
+      PRIORITY: '10'
+      STATE: backup
+      VIP_1: <<IP_ADDRESS_1>>
+      VIP_2: <<IP_ADDRESS_2>>
+      VROUTERID: '10'
+    network_mode: host
+    labels:
+      io.rancher.scheduler.affinity:host_label: role=loadbalancer
+      io.rancher.container.dns: 'true'
+      io.rancher.container.pull_image: always
+      job: loadbalancer
+  HAproxy:
+    image: haproxy:alpine
+    network_mode: host
+    volumes:
+    - haproxy-etc-haproxy:/usr/local/etc/haproxy
+    - haproxy-etc-sysctd-d:/etc/sysctl.d
+    labels:
+      io.rancher.container.dns: 'true'
+      io.rancher.sidekicks: Keepalived
+      io.rancher.scheduler.affinity:host_label: role=loadbalancer
+      io.rancher.container.pull_image: always
+      io.rancher.scheduler.global: 'true'
+      job: loadbalancer

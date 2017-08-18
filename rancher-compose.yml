@@ -1,0 +1,7 @@
+version: '2'
+services:
+  Keepalived:
+    scale: 1
+    start_on_create: true
+  HAproxy:
+    start_on_create: true
